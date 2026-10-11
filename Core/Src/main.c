@@ -27,13 +27,11 @@
 #define PI_F 3.14159265f
 #define TWO_PI_F (2.0f * PI_F)
 
-
-
 /* クローズドループ定常時の変調振幅 (0.5 で電源電圧いっぱい) */
-#define AMP_RUN 0.090f
+#define AMP_RUN 0.180f
 
 /* 停止付近で使う最低振幅 */
-#define AMP_BOOST 0.030f
+#define AMP_BOOST 0.035f
 
 /* 片方向あたりの回転時間 [ms] */
 #define DIR_PERIOD_MS 5000U
@@ -191,7 +189,7 @@ int main(void) {
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN WHILE */
-  int8_t dir = 1;     /* 回転方向 1 が正転 -1 が逆転 */
+  int8_t dir = 1; /* 回転方向 1 が正転 -1 が逆転 */
   uint32_t phase_start = HAL_GetTick();
   uint32_t last_tick = phase_start;
 
@@ -237,7 +235,8 @@ int main(void) {
       Update_Current_Limit();
     }
 
-    /* 3. ローター磁極に対して 90 度進んだ位相に電圧を印加 (クローズドループ駆動) */
+    /* 3. ローター磁極に対して 90 度進んだ位相に電圧を印加
+     * (クローズドループ駆動) */
     float theta_v;
     if (dir > 0) {
       theta_v = theta_rotor + (PI_F / 2.0f);
@@ -622,8 +621,6 @@ static float Speed_Ratio(uint32_t elapsed_ms) {
   return 1.0f;
 }
 
-
-
 /* 電気角と振幅から3相の PWM デューティを設定する */
 static void Set_Phase_Duty(float theta, float amp) {
   float du = 0.5f + amp * sinf(theta);
@@ -769,8 +766,10 @@ static void Calibrate_Alignment(void) {
 
   /* 角度変化の差分からセンサ極性を判定 */
   float diff = ang1 - ang0;
-  if (diff < -PI_F) diff += TWO_PI_F;
-  if (diff > PI_F)  diff -= TWO_PI_F;
+  if (diff < -PI_F)
+    diff += TWO_PI_F;
+  if (diff > PI_F)
+    diff -= TWO_PI_F;
   sensor_dir = (diff >= 0.0f) ? 1.0f : -1.0f;
 
   /* 3. 再び電気角 0 度に戻して基準原点を確定 */
