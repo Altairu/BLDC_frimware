@@ -28,10 +28,16 @@
 #define TWO_PI_F (2.0f * PI_F)
 
 /* クローズドループ定常時の変調振幅 (0.5 で電源電圧いっぱい) */
-#define AMP_RUN 0.180f
+#define AMP_RUN 0.220f
 
 /* 停止付近で使う最低振幅 */
 #define AMP_BOOST 0.035f
+
+/* アライメント時の引き込み振幅 (減速ギアの静止摩擦に打ち勝つ) */
+#define ALIGN_AMP 0.080f
+
+/* 正転と逆転の電流バランス微調整 (ラジアン) */
+#define ADVANCE_TRIM_RAD 0.06f
 
 /* 片方向あたりの回転時間 [ms] */
 #define DIR_PERIOD_MS 5000U
@@ -235,14 +241,9 @@ int main(void) {
       Update_Current_Limit();
     }
 
-    /* 3. ローター磁極に対して 90 度進んだ位相に電圧を印加
-     * (クローズドループ駆動) */
-    float theta_v;
-    if (dir > 0) {
-      theta_v = theta_rotor + (PI_F / 2.0f);
-    } else {
-      theta_v = theta_rotor - (PI_F / 2.0f);
-    }
+    /* 3. ローター磁極に対して 90 度進んだ位相に電圧を印加 (クローズドループ駆動) */
+    float lead_angle = (dir > 0) ? (PI_F / 2.0f) : -(PI_F / 2.0f);
+    float theta_v = theta_rotor + lead_angle + ADVANCE_TRIM_RAD;
 
     /* 3相 PWM を即時更新 */
     Set_Phase_Duty(theta_v, cmd_amp);
@@ -627,6 +628,10 @@ static void Set_Phase_Duty(float theta, float amp) {
   float dv = 0.5f + amp * sinf(theta - TWO_PI_F / 3.0f);
   float dw = 0.5f + amp * sinf(theta + TWO_PI_F / 3.0f);
 
+  if (du < 0.0f) du = 0.0f; else if (du > 1.0f) du = 1.0f;
+  if (dv < 0.0f) dv = 0.0f; else if (dv > 1.0f) dv = 1.0f;
+  if (dw < 0.0f) dw = 0.0f; else if (dw > 1.0f) dw = 1.0f;
+
   __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, (uint32_t)(du * PWM_ARR));
   __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, (uint32_t)(dv * PWM_ARR));
   __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, (uint32_t)(dw * PWM_ARR));
@@ -728,31 +733,32 @@ static void Play_Startup_Tune(void) {
   HAL_Delay(100);
 }
 
-/* ローターの初期位置キャリブレーションとセンサ極性自動判定 */
+/* ローターの初期位置キャリブレーションとセンサ極性自動判定 (両方向引き込みで摩擦相殺) */
 static void Calibrate_Alignment(void) {
   /* LED を緑色に点灯してキャリブレーション中を示す */
   __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
   __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
   __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, LED_DUTY);
 
-  /* 1. 電気角 0 度に電圧を印加して静止位置に引き込む (600ms) */
-  Set_Phase_Duty(0.0f, AMP_BOOST);
-  HAL_Delay(600);
+  /* 1. 電気角 +60 度から 0 度へ引き込み (正転側からのアライメント) */
+  Set_Phase_Duty(PI_F / 3.0f, ALIGN_AMP);
+  HAL_Delay(300);
+  Set_Phase_Duty(0.0f, ALIGN_AMP);
+  HAL_Delay(500);
 
-  /* 電気角 0 度でのセンサ角度を測定 */
   uint32_t sum_a = 0;
   uint32_t sum_b = 0;
   for (int i = 0; i < 32; i++) {
     sum_a += ADC2_ReadChannel(ADC_CHANNEL_2);
     sum_b += ADC2_ReadChannel(ADC_CHANNEL_3);
   }
-  float a0 = (float)(sum_a / 32U) - hall_a_center;
-  float b0 = (float)(sum_b / 32U) - hall_b_center;
-  float ang0 = atan2f(b0, a0);
+  float a_pos = (float)(sum_a / 32U) - hall_a_center;
+  float b_pos = (float)(sum_b / 32U) - hall_b_center;
+  float ang0 = atan2f(b_pos, a_pos);
 
-  /* 2. 電気角 60 度 (PI/3) に動かしてセンサの回転方向を自動判定 (400ms) */
-  Set_Phase_Duty(PI_F / 3.0f, AMP_BOOST);
-  HAL_Delay(400);
+  /* 2. 電気角 +60 度へ動かしてセンサの回転方向を自動判定 */
+  Set_Phase_Duty(PI_F / 3.0f, ALIGN_AMP);
+  HAL_Delay(300);
 
   sum_a = 0;
   sum_b = 0;
@@ -772,9 +778,11 @@ static void Calibrate_Alignment(void) {
     diff -= TWO_PI_F;
   sensor_dir = (diff >= 0.0f) ? 1.0f : -1.0f;
 
-  /* 3. 再び電気角 0 度に戻して基準原点を確定 */
-  Set_Phase_Duty(0.0f, AMP_BOOST);
+  /* 3. 電気角 -60 度から 0 度へ引き込み (逆転側からのアライメント) */
+  Set_Phase_Duty(-PI_F / 3.0f, ALIGN_AMP);
   HAL_Delay(300);
+  Set_Phase_Duty(0.0f, ALIGN_AMP);
+  HAL_Delay(500);
 
   sum_a = 0;
   sum_b = 0;
@@ -782,9 +790,11 @@ static void Calibrate_Alignment(void) {
     sum_a += ADC2_ReadChannel(ADC_CHANNEL_2);
     sum_b += ADC2_ReadChannel(ADC_CHANNEL_3);
   }
-  a0 = (float)(sum_a / 32U) - hall_a_center;
-  b0 = (float)(sum_b / 32U) - hall_b_center;
-  sensor_zero_offset = atan2f(b0, a0);
+  float a_neg = (float)(sum_a / 32U) - hall_a_center;
+  float b_neg = (float)(sum_b / 32U) - hall_b_center;
+
+  /* 正転側と逆転側のベクトル合成平均でギアの静止摩擦を相殺 */
+  sensor_zero_offset = atan2f(b_pos + b_neg, a_pos + a_neg);
 
   /* アライメント完了音 (ピッ、ピッ) */
   Play_Beep(2500, 80, 0.02f);
