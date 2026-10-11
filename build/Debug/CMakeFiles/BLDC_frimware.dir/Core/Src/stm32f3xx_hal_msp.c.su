@@ -1,0 +1,10 @@
+C:/Users/106no/Documents/GitHub/BLDC_frimware/Core/Src/stm32f3xx_hal_msp.c:65:6:HAL_MspInit	16	static
+C:/Users/106no/Documents/GitHub/BLDC_frimware/Core/Src/stm32f3xx_hal_msp.c:90:6:HAL_ADC_MspInit	56	static
+C:/Users/106no/Documents/GitHub/BLDC_frimware/Core/Src/stm32f3xx_hal_msp.c:152:6:HAL_ADC_MspDeInit	16	static
+C:/Users/106no/Documents/GitHub/BLDC_frimware/Core/Src/stm32f3xx_hal_msp.c:205:6:HAL_CAN_MspInit	48	static
+C:/Users/106no/Documents/GitHub/BLDC_frimware/Core/Src/stm32f3xx_hal_msp.c:245:6:HAL_CAN_MspDeInit	16	static
+C:/Users/106no/Documents/GitHub/BLDC_frimware/Core/Src/stm32f3xx_hal_msp.c:276:6:HAL_TIM_Base_MspInit	24	static
+C:/Users/106no/Documents/GitHub/BLDC_frimware/Core/Src/stm32f3xx_hal_msp.c:299:6:HAL_TIM_PWM_MspInit	24	static
+C:/Users/106no/Documents/GitHub/BLDC_frimware/Core/Src/stm32f3xx_hal_msp.c:316:6:HAL_TIM_MspPostInit	48	static
+C:/Users/106no/Documents/GitHub/BLDC_frimware/Core/Src/stm32f3xx_hal_msp.c:383:6:HAL_TIM_Base_MspDeInit	16	static
+C:/Users/106no/Documents/GitHub/BLDC_frimware/Core/Src/stm32f3xx_hal_msp.c:405:6:HAL_TIM_PWM_MspDeInit	16	static

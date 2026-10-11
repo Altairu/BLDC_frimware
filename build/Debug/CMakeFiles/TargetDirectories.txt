@@ -1,0 +1,6 @@
+C:/Users/106no/Documents/GitHub/BLDC_frimware/build/Debug/CMakeFiles/BLDC_frimware.dir
+C:/Users/106no/Documents/GitHub/BLDC_frimware/build/Debug/CMakeFiles/edit_cache.dir
+C:/Users/106no/Documents/GitHub/BLDC_frimware/build/Debug/CMakeFiles/rebuild_cache.dir
+C:/Users/106no/Documents/GitHub/BLDC_frimware/build/Debug/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+C:/Users/106no/Documents/GitHub/BLDC_frimware/build/Debug/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+C:/Users/106no/Documents/GitHub/BLDC_frimware/build/Debug/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir
